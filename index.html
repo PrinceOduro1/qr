@@ -553,7 +553,7 @@ let visitors = JSON.parse(localStorage.getItem('visitorLog') || '[]');
 function save() { localStorage.setItem('visitorLog', JSON.stringify(visitors)); }
 
 /* ─────────── TABS ─────────── */
-const TAB_NAMES = ['qr','form','signout','log'];
+const TAB_NAMES = ['qr','form','signout'];
 
 function showTab(name) {
   TAB_NAMES.forEach((t, i) => {
