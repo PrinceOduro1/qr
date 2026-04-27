@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitor Management System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0f2044;
+    --navy-light: #1a3460;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #faf8f3;
+    --cream-dark: #f0ece0;
+    --text: #1a1a2e;
+    --text-muted: #5a6070;
+    --border: #ddd8c8;
+    --success: #2d6a4f;
+    --success-bg: #d8f3dc;
+    --white: #ffffff;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .app { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--gold);
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    color: var(--navy);
+    letter-spacing: 0.5px;
+  }
+  .header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 4px; }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    background: var(--cream-dark);
+    padding: 6px;
+    border-radius: 12px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active { background: var(--navy); color: var(--white); }
+  .tab:hover:not(.active) { background: var(--border); color: var(--text); }
+
+  /* ── QR PANEL ── */
+  .qr-panel { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+  .qr-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+  .qr-card .org-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .qr-card .subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  #qrcode { display: flex; justify-content: center; margin: 1rem 0; }
+  #qrcode canvas, #qrcode img { border-radius: 8px; }
+  .qr-instruction { font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem; line-height: 1.6; }
+  .qr-url {
+    font-size: 0.75rem;
+    color: var(--navy);
+    font-weight: 500;
+    background: var(--cream-dark);
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+    word-break: break-all;
+  }
+
+  .qr-info {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    max-width: 400px;
+    width: 100%;
+    line-height: 1.7;
+  }
+  .qr-info strong { color: var(--navy); }
+
+  .url-config { max-width: 400px; width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .url-config label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); font-weight: 500; }
+  .url-config input { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--cream); color: var(--text); outline: none; }
+  .url-config input:focus { border-color: var(--navy); background: var(--white); }
+
+  /* ── FORM PANEL ── */
+  .form-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+  }
+  .form-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+  .form-badge {
+    width: 40px; height: 40px;
+    background: var(--navy);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .form-header h2 { font-size: 1.1rem; font-weight: 600; color: var(--navy); }
+  .form-header p { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .required::after { content: ' *'; color: #c0392b; }
+
+  input[type="text"], input[type="tel"], input[type="email"], input[type="time"], select, textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--cream);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--navy); background: var(--white); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .submit-btn:hover { background: var(--navy-light); }
+  .submit-btn:active { transform: scale(0.99); }
+
+  /* ── SUCCESS ── */
+  .success-msg { text-align: center; padding: 2.5rem 1rem; }
+  .success-icon {
+    width: 64px; height: 64px;
+    background: var(--success-bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 1rem;
+  }
+  .success-msg h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--navy); margin-bottom: 8px; }
+  .success-msg p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .btn-new {
+    padding: 10px 24px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    cursor: pointer;
+    margin: 4px;
+  }
+  .btn-secondary {
+    padding: 10px 24px;
+    background: transparent;
+    color: var(--navy);
+    border: 1.5px solid var(--navy);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    cursor: pointer;
+    margin: 4px;
+  }
+
+  /* ── SIGN OUT PANEL ── */
+  .signout-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .signout-card h2 { font-size: 1.1rem; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
+  .signout-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+
+  .visitor-result {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .visitor-result .vr-info { flex: 1; }
+  .visitor-result .vr-name { font-weight: 600; font-size: 0.95rem; color: var(--navy); }
+  .visitor-result .vr-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+  .vr-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .vr-status.in { background: #d8f3dc; color: #1b4332; }
+  .vr-status.out { background: #ffe8cc; color: #7c3a00; }
+
+  .signout-btn {
+    padding: 8px 18px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .signout-btn:disabled { background: #ccc; cursor: default; }
+
+  .no-results { text-align: center; color: var(--text-muted); padding: 2rem; font-size: 0.9rem; }
+
+  /* ── LOG PANEL ── */
+  .log-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .log-toolbar h2 { font-size: 1rem; font-weight: 600; color: var(--navy); }
+  .badge-count {
+    background: var(--navy); color: var(--white);
+    font-size: 0.75rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+  }
+  .log-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn-export-csv {
+    padding: 8px 16px;
+    background: #2d6a4f;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-export-csv:hover { background: #1b4332; }
+
+  .btn-export-excel {
+    padding: 8px 16px;
+    background: #1d6035;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-export-excel:hover { background: #145228; }
+
+  .btn-clear {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    border-radius: 7px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-clear:hover { background: #fff5f5; }
+
+  .log-filter {
+    margin-bottom: 1rem;
+  }
+  .log-filter input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    width: 100%;
+    max-width: 340px;
+  }
+  .log-filter input:focus { border-color: var(--navy); }
+
+  .log-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th {
+    background: var(--navy); color: var(--white);
+    padding: 10px 14px; text-align: left;
+    font-weight: 500; white-space: nowrap;
+  }
+  th:first-child { border-radius: 11px 0 0 0; }
+  th:last-child { border-radius: 0 11px 0 0; }
+  td { padding: 10px 14px; color: var(--text); border-bottom: 1px solid var(--cream-dark); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: var(--cream); }
+  tr:hover td { background: #eef2ff; }
+
+  .status-pill {
+    font-size: 0.72rem; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px;
+    display: inline-block; white-space: nowrap;
+  }
+  .status-in { background: #d8f3dc; color: #1b4332; }
+  .status-out { background: #ffe8cc; color: #7c3a00; }
+
+  .empty-log { text-align: center; padding: 3rem; color: var(--text-muted); background: var(--white); border: 1px solid var(--border); border-radius: 12px; }
+  .empty-log .icon { font-size: 2rem; margin-bottom: 8px; }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    body { background: white; }
+    .tabs, .url-config, .qr-info, .btn-print-hide { display: none !important; }
+    .qr-card { border: 1px solid #ccc; page-break-inside: avoid; max-width: 100%; }
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .time-row { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: 1; }
+    .header h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1 id="page-org-name">Visitor Management System</h1>
+    <p>Digital visitor registration &amp; log tracking</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active"  onclick="showTab('qr')">📱 QR Code</button>
+    <button class="tab"         onclick="showTab('form')">📋 Check-In</button>
+    <button class="tab"         onclick="showTab('signout')">🚪 Sign Out</button>
+  </div>
+
+  <!-- ═══════════ QR TAB ═══════════ -->
+  <div id="tab-qr" class="qr-panel">
+
+    <div class="qr-card" id="printable-qr">
+      <div class="org-name" id="org-display">Your Organization</div>
+      <div class="subtitle">Visitor Check-In</div>
+      <div id="qrcode"></div>
+      <div class="qr-instruction">Point your phone camera at this QR code to register your visit</div>
+      <div class="qr-url" id="qr-url-display">Set your hosted URL below</div>
+    </div>
+
+    <div class="url-config btn-print-hide">
+      <label>Organization Name</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="org-name-input" placeholder="e.g. Acme Ltd. Head Office" value="Your Organization" style="flex:1;">
+        <button onclick="updateOrgName()" style="padding:10px 18px;background:var(--navy);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;">Update</button>
+      </div>
+
+      <label style="margin-top:0.75rem;">Hosted URL for QR Code</label>
+      <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;">
+        After uploading this file to a web host (e.g. Netlify, GitHub Pages), paste the URL here so the QR code points to your live site.
+      </p>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="qr-url-input" placeholder="https://your-site.netlify.app" style="flex:1;">
+        <button onclick="updateQR()" style="padding:10px 18px;background:var(--navy);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;">Generate</button>
+      </div>
+    </div>
+
+    <div class="qr-info btn-print-hide">
+      <strong>Deployment guide:</strong><br>
+      1. Save this HTML file to your computer<br>
+      2. Create a free account at <strong>netlify.com</strong><br>
+      3. Drag &amp; drop this file onto the Netlify dashboard<br>
+      4. Copy the live URL and paste it above → click Generate<br>
+      5. Print the QR card and display it at reception
+    </div>
+
+    <button onclick="window.print()" class="btn-print-hide" style="padding:10px 24px;background:var(--navy);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;">🖨 Print QR Card</button>
+  </div>
+
+  <!-- ═══════════ FORM TAB ═══════════ -->
+  <div id="tab-form" style="display:none;">
+    <div class="form-card" id="form-container">
+      <div class="form-header">
+        <div class="form-badge">👤</div>
+        <div>
+          <h2>Visitor Check-In</h2>
+          <p>Please fill in all required fields before proceeding</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="required">Full Name</label>
+          <input type="text" id="v-name" placeholder="e.g. Kwame Asante">
+        </div>
+        <div class="form-group">
+          <label class="required">Telephone Number</label>
+          <input type="tel" id="v-phone" placeholder="e.g. +233 20 000 0000">
+        </div>
+        <div class="form-group">
+          <label class="required">Email Address</label>
+          <input type="email" id="v-email" placeholder="e.g. name@company.com">
+        </div>
+        <div class="form-group">
+          <label class="required">Organization / Company</label>
+          <input type="text" id="v-org" placeholder="Where are you coming from?">
+        </div>
+        <div class="form-group">
+          <label class="required">Person to See</label>
+          <input type="text" id="v-host" placeholder="Name of person you're visiting">
+        </div>
+        <div class="form-group">
+          <label class="required">Purpose of Visit</label>
+          <select id="v-purpose">
+            <option value="">-- Select purpose --</option>
+            <option>Business Meeting</option>
+            <option>Delivery / Courier</option>
+            <option>Interview / Recruitment</option>
+            <option>Maintenance / Contractor</option>
+            <option>Training / Workshop</option>
+            <option>Official Visit</option>
+            <option>Personal Visit</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Additional Notes (optional)</label>
+          <textarea id="v-notes" placeholder="Any extra details about your visit..."></textarea>
+        </div>
+        <div class="form-group full">
+          <div class="time-row">
+            <div class="form-group">
+              <label class="required">Time In</label>
+              <input type="time" id="v-time-in">
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="text" id="v-date" readonly style="background:#f0ece0;cursor:default;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="submitForm()">Submit Check-In →</button>
+    </div>
+
+    <div id="success-container" class="form-card success-msg" style="display:none;">
+      <div class="success-icon">✓</div>
+      <h2>Check-In Complete!</h2>
+      <p>Your visit has been logged successfully. Please proceed to reception.<br>
+         <strong>Remember to sign out before leaving.</strong></p>
+      <button class="btn-new" onclick="resetForm()">New Check-In</button>
+      <button class="btn-secondary" onclick="showTab('signout')">Sign Out Later →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ SIGN OUT TAB ═══════════ -->
+  <div id="tab-signout" style="display:none;">
+    <div class="signout-card">
+      <h2>🚪 Visitor Sign-Out</h2>
+      <p>Search for your name to record your departure time.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:1rem;">
+        <input type="text" id="so-search" placeholder="Enter your name or phone number..." oninput="searchVisitors()"
+          style="flex:1;font-family:'DM Sans',sans-serif;font-size:0.875rem;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--cream);color:var(--text);outline:none;">
+      </div>
+
+      <div id="so-results"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ─────────── STATE ─────────── */
+let visitors = JSON.parse(localStorage.getItem('visitorLog') || '[]');
+
+function save() { localStorage.setItem('visitorLog', JSON.stringify(visitors)); }
+
+/* ─────────── TABS ─────────── */
+const TAB_NAMES = ['qr','form','signout','log'];
+
+function showTab(name) {
+  TAB_NAMES.forEach((t, i) => {
+    const el = document.getElementById('tab-' + t);
+    el.style.display = 'none';
+    document.querySelectorAll('.tab')[i].classList.remove('active');
+  });
+  const idx = TAB_NAMES.indexOf(name);
+  document.getElementById('tab-' + name).style.display = name === 'qr' ? 'flex' : 'block';
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  if (name === 'log') renderLog();
+  if (name === 'signout') { document.getElementById('so-search').value = ''; document.getElementById('so-results').innerHTML = ''; }
+}
+
+/* ─────────── QR CODE ─────────── */
+let qrInstance = null;
+
+function generateQR(url) {
+  const container = document.getElementById('qrcode');
+  container.innerHTML = '';
+  qrInstance = new QRCode(container, {
+    text: url,
+    width: 190, height: 190,
+    colorDark: '#0f2044', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function updateOrgName() {
+  const val = document.getElementById('org-name-input').value.trim() || 'Your Organization';
+  document.getElementById('org-display').textContent = val;
+  document.getElementById('page-org-name').textContent = val + ' — Visitor System';
+}
+
+function updateQR() {
+  const url = document.getElementById('qr-url-input').value.trim();
+  if (!url) { alert('Please enter your hosted URL first.'); return; }
+  document.getElementById('qr-url-display').textContent = url;
+  generateQR(url);
+}
+
+window.addEventListener('load', () => {
+  const defaultUrl = window.location.href.split('#')[0] + '#form';
+  document.getElementById('qr-url-display').textContent = defaultUrl;
+  document.getElementById('qr-url-input').value = '';
+  generateQR(defaultUrl);
+
+  const today = new Date();
+  document.getElementById('v-date').value = today.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  document.getElementById('v-time-in').value = nowTime();
+
+  if (window.location.hash === '#form') showTab('form');
+  if (window.location.hash === '#signout') showTab('signout');
+});
+
+/* ─────────── HELPERS ─────────── */
+function nowTime() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+function todayStr() {
+  return new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+/* ─────────── CHECK-IN FORM ─────────── */
+function submitForm() {
+  const required = { name:'v-name', phone:'v-phone', email:'v-email', org:'v-org', host:'v-host', purpose:'v-purpose', timeIn:'v-time-in' };
+  let valid = true;
+  Object.values(required).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) { el.style.borderColor = '#e74c3c'; valid = false; }
+    else el.style.borderColor = '';
+  });
+  if (!valid) { alert('Please fill in all required fields (marked with *).'); return; }
+
+  const entry = {
+    id: Date.now(),
+    date: document.getElementById('v-date').value,
+    name: document.getElementById('v-name').value.trim(),
+    phone: document.getElementById('v-phone').value.trim(),
+    email: document.getElementById('v-email').value.trim(),
+    org: document.getElementById('v-org').value.trim(),
+    host: document.getElementById('v-host').value.trim(),
+    purpose: document.getElementById('v-purpose').value,
+    notes: document.getElementById('v-notes').value.trim(),
+    timeIn: document.getElementById('v-time-in').value,
+    timeOut: ''
+  };
+
+  visitors.unshift(entry);
+  save();
+
+  document.getElementById('form-container').style.display = 'none';
+  document.getElementById('success-container').style.display = 'block';
+}
+
+function resetForm() {
+  ['v-name','v-phone','v-email','v-org','v-host','v-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('v-purpose').value = '';
+  document.getElementById('v-time-in').value = nowTime();
+  document.getElementById('v-date').value = todayStr();
+  document.getElementById('form-container').style.display = 'block';
+  document.getElementById('success-container').style.display = 'none';
+}
+
+/* ─────────── SIGN OUT ─────────── */
+function searchVisitors() {
+  const q = document.getElementById('so-search').value.trim().toLowerCase();
+  const container = document.getElementById('so-results');
+  if (!q) { container.innerHTML = ''; return; }
+
+  const today = todayStr();
+  const matches = visitors.filter(v =>
+    v.date === today &&
+    (v.name.toLowerCase().includes(q) || v.phone.toLowerCase().includes(q))
+  );
+
+  if (matches.length === 0) {
+    container.innerHTML = '<div class="no-results">No visitors found for today matching "<strong>' + escHtml(q) + '</strong>".</div>';
+    return;
+  }
+
+  container.innerHTML = matches.map(v => `
+    <div class="visitor-result">
+      <div class="vr-info">
+        <div class="vr-name">${escHtml(v.name)}</div>
+        <div class="vr-meta">${escHtml(v.org)} &nbsp;·&nbsp; In: ${v.timeIn}${v.timeOut ? ' &nbsp;·&nbsp; Out: ' + v.timeOut : ''}</div>
+      </div>
+      <span class="vr-status ${v.timeOut ? 'out' : 'in'}">${v.timeOut ? 'Signed Out' : 'Checked In'}</span>
+      <button class="signout-btn" onclick="recordSignOut(${v.id})" ${v.timeOut ? 'disabled' : ''}>
+        ${v.timeOut ? 'Done' : 'Sign Out'}
+      </button>
+    </div>
+  `).join('');
+}
+
+function recordSignOut(id) {
+  const entry = visitors.find(v => v.id === id);
+  if (!entry) return;
+  entry.timeOut = nowTime();
+  save();
+  searchVisitors();
+
+  const toast = document.createElement('div');
+  toast.textContent = '✓ ' + entry.name + ' signed out at ' + entry.timeOut;
+  Object.assign(toast.style, {
+    position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)',
+    background:'#2d6a4f', color:'white', padding:'10px 20px',
+    borderRadius:'8px', fontSize:'0.875rem', zIndex:'999',
+    boxShadow:'0 4px 12px rgba(0,0,0,0.2)', fontFamily:'DM Sans,sans-serif'
+  });
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+/* ─────────── LOG ─────────── */
+function renderLog() {
+  const q = (document.getElementById('log-search')?.value || '').toLowerCase();
+  const filtered = q
+    ? visitors.filter(v => v.name.toLowerCase().includes(q) || v.org.toLowerCase().includes(q) || v.host.toLowerCase().includes(q))
+    : visitors;
+
+  document.getElementById('log-count').textContent = filtered.length;
+  const body = document.getElementById('log-body');
+
+  if (filtered.length === 0) {
+    body.innerHTML = '<div class="empty-log"><div class="icon">📋</div><p>' +
+      (visitors.length === 0 ? 'No visitors logged yet.' : 'No results match your search.') + '</p></div>';
+    return;
+  }
+
+  body.innerHTML = `<div class="log-table-wrap"><table>
+    <thead><tr>
+      <th>#</th><th>Date</th><th>Visitor</th><th>Phone</th><th>Email</th>
+      <th>From</th><th>Host</th><th>Purpose</th><th>In</th><th>Out</th><th>Status</th>
+    </tr></thead>
+    <tbody>
+      ${filtered.map((v, i) => `<tr>
+        <td>${filtered.length - i}</td>
+        <td>${escHtml(v.date)}</td>
+        <td><strong>${escHtml(v.name)}</strong></td>
+        <td>${escHtml(v.phone)}</td>
+        <td>${escHtml(v.email)}</td>
+        <td>${escHtml(v.org)}</td>
+        <td>${escHtml(v.host)}</td>
+        <td>${escHtml(v.purpose)}</td>
+        <td>${escHtml(v.timeIn)}</td>
+        <td>${v.timeOut ? escHtml(v.timeOut) : '—'}</td>
+        <td><span class="status-pill ${v.timeOut ? 'status-out' : 'status-in'}">${v.timeOut ? 'Signed Out' : 'On Premises'}</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function clearLog() {
+  if (!confirm('Clear ALL visitor records? This cannot be undone.')) return;
+  visitors = [];
+  save();
+  renderLog();
+}
+
+/* ─────────── ESCAPE HTML ─────────── */
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─────────── EXPORT CSV ─────────── */
+function exportCSV() {
+  if (visitors.length === 0) { alert('No visitor records to export.'); return; }
+  const headers = ['#','Date','Full Name','Phone','Email','Organization','Host','Purpose','Notes','Time In','Time Out','Status'];
+  const rows = visitors.map((v, i) => [
+    visitors.length - i,
+    v.date, v.name, v.phone, v.email, v.org, v.host, v.purpose,
+    v.notes || '', v.timeIn, v.timeOut || '', v.timeOut ? 'Signed Out' : 'On Premises'
+  ]);
+
+  const csvContent = [headers, ...rows]
+    .map(row => row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, 'visitor-log-' + dateStamp() + '.csv');
+}
+
+/* ─────────── EXPORT EXCEL ─────────── */
+function exportExcel() {
+  if (visitors.length === 0) { alert('No visitor records to export.'); return; }
+
+  const headers = ['#','Date','Full Name','Phone','Email','Organization','Host','Purpose','Notes','Time In','Time Out','Status'];
+  const rows = visitors.map((v, i) => [
+    visitors.length - i,
+    v.date, v.name, v.phone, v.email, v.org, v.host, v.purpose,
+    v.notes || '', v.timeIn, v.timeOut || '', v.timeOut ? 'Signed Out' : 'On Premises'
+  ]);
+
+  /* Build a minimal XLSX file (OpenXML) without external libraries */
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts><font><b/><sz val="11"/></font><font><sz val="11"/></font></fonts>
+  <fills><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF0F2044"/></patternFill></fill></fills>
+  <borders><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0"><alignment horizontal="center"/></xf>
+  </cellXfs>
+</styleSheet>`;
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  }
+
+  function cellRef(col, row) {
+    return String.fromCharCode(65 + col) + row;
+  }
+
+  function buildSheet(headers, rows) {
+    const allRows = [headers, ...rows];
+    let sharedStrings = [];
+    let ssMap = {};
+    function si(s) {
+      const key = String(s);
+      if (ssMap[key] === undefined) { ssMap[key] = sharedStrings.length; sharedStrings.push(key); }
+      return ssMap[key];
+    }
+
+    let sheetXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<sheetData>`;
+
+    allRows.forEach((row, ri) => {
+      const rowNum = ri + 1;
+      const isHeader = ri === 0;
+      sheetXml += `<row r="${rowNum}">`;
+      row.forEach((cell, ci) => {
+        const ref = cellRef(ci, rowNum);
+        const idx = si(cell);
+        const style = isHeader ? ' s="1"' : '';
+        sheetXml += `<c r="${ref}" t="s"${style}><v>${idx}</v></c>`;
+      });
+      sheetXml += `</row>`;
+    });
+
+    sheetXml += `</sheetData></worksheet>`;
+
+    let ssXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${sharedStrings.length}" uniqueCount="${sharedStrings.length}">`;
+    sharedStrings.forEach(s => { ssXml += `<si><t xml:space="preserve">${esc(s)}</t></si>`; });
+    ssXml += `</sst>`;
+
+    return { sheetXml, ssXml };
+  }
+
+  const { sheetXml, ssXml } = buildSheet(headers, rows);
+
+  const workbook = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Visitor Log" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`;
+
+  const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+  const pkgRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml"  ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml"              ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml"     ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/sharedStrings.xml"         ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
+  <Override PartName="/xl/styles.xml"                ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`;
+
+  /* Pack into ZIP using JSZip */
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+  script.onload = () => {
+    const zip = new JSZip();
+    zip.file('[Content_Types].xml', contentTypes);
+    zip.folder('_rels').file('.rels', pkgRels);
+    const xl = zip.folder('xl');
+    xl.file('workbook.xml', workbook);
+    xl.file('sharedStrings.xml', ssXml);
+    xl.file('styles.xml', styles);
+    xl.folder('_rels').file('workbook.xml.rels', wbRels);
+    xl.folder('worksheets').file('sheet1.xml', sheetXml);
+
+    zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      .then(blob => downloadBlob(blob, 'visitor-log-' + dateStamp() + '.xlsx'));
+  };
+  document.head.appendChild(script);
+}
+
+/* ─────────── DOWNLOAD HELPER ─────────── */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function dateStamp() {
+  return new Date().toISOString().slice(0,10);
+}
+</script>
+</body>
+</html>
