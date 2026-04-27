@@ -558,14 +558,25 @@ const TAB_NAMES = ['qr','form','signout'];
 function showTab(name) {
   TAB_NAMES.forEach((t, i) => {
     const el = document.getElementById('tab-' + t);
-    el.style.display = 'none';
-    document.querySelectorAll('.tab')[i].classList.remove('active');
+    if (el) el.style.display = 'none';
+
+    const tabs = document.querySelectorAll('.tab');
+    if (tabs[i]) tabs[i].classList.remove('active');
   });
+
   const idx = TAB_NAMES.indexOf(name);
-  document.getElementById('tab-' + name).style.display = name === 'qr' ? 'flex' : 'block';
-  document.querySelectorAll('.tab')[idx].classList.add('active');
-  if (name === 'log') renderLog();
-  if (name === 'signout') { document.getElementById('so-search').value = ''; document.getElementById('so-results').innerHTML = ''; }
+  const activeTab = document.getElementById('tab-' + name);
+  if (activeTab) {
+    activeTab.style.display = name === 'qr' ? 'flex' : 'block';
+  }
+
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+
+  if (name === 'signout') {
+    document.getElementById('so-search').value = '';
+    document.getElementById('so-results').innerHTML = '';
+  }
 }
 
 /* ─────────── QR CODE ─────────── */
